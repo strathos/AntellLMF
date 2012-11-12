@@ -19,6 +19,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class AntellLMF extends Activity {
 	public static Context context;
@@ -153,7 +154,7 @@ public class AntellLMF extends Activity {
 		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(AntellLMF.context);
 		String language = settings.getString("foodMenuLanguage","");
 		StringBuilder sb = new StringBuilder();
-		Pattern p = Pattern.compile("(?<!^|/)(M|VL|L|G)");
+		Pattern p = Pattern.compile("(?<!^|/|/ )(M|VL|L|G)");
 		for (Element row : table.select("tr")) {
 	        Element tds = row.select("td").first();
 	        Matcher m = p.matcher(tds.text());
@@ -161,10 +162,10 @@ public class AntellLMF extends Activity {
 			while (m.find()) {
 				sb2.append(m.group());
 			}
-	        if (language.equals("Finnish")) {
+			if (language.equals("Finnish") || !(tds.text().matches("(.*)/(.*)"))) {
 	        	sb.append(tds.text().split("/| \\(")[0] + " " + sb2.toString() + "\n");
 	        } else {
-	        	sb.append(tds.text().split("/| \\(")[1] + " " + sb2.toString() + "\n");
+	        	sb.append(tds.text().split("/| \\(")[1].replaceAll("^\\s","") + " " + sb2.toString() + "\n");
 	        };
 	        //Log.d("DATA",""+tds.text());
 	    }
@@ -188,12 +189,12 @@ public class AntellLMF extends Activity {
 		}
 		if ( language.equals("Finnish")) {
 			sb.append("Viikon erikoiset\n\n");
-			sb.append(table.text().split("Week|/|: ")[2].replaceAll("(?<!^|/)(M|VL|L|G).+(M|VL|L|G)", "") + sb2.toString() + "\n");
-			sb.append(table.text().split("Week|/|: ")[5].replaceAll("(?<!^|/)(M|VL|L|G).+(M|VL|L|G)", "") + sb3.toString());
+			sb.append(table.text().split("Week|/|: ")[2].replaceAll("(?<!^|/|/ )(M|VL|L|G).+(M|VL|L|G)", "") + sb2.toString() + "\n");
+			sb.append(table.text().split("Week|/|: ")[5].replaceAll("(?<!^|/|/ )(M|VL|L|G).+(M|VL|L|G)", "") + sb3.toString());
 		} else {
 			sb.append("Specials of the week\n\n");
-			sb.append(table.text().split("Week|/|: ")[3] + sb2.toString() + "\n");
-			sb.append(table.text().split("Week|/|: ")[6] + " " + sb3.toString());
+			sb.append(table.text().split("Week|/|: ")[3].replaceAll("^\\s","") + sb2.toString() + "\n");
+			sb.append(table.text().split("Week|/|: ")[6].replaceAll("^\\s","") + " " + sb3.toString());
 		};
 		//Log.d("DATA",""+table.text());
 	    return sb.toString();
@@ -222,6 +223,8 @@ public class AntellLMF extends Activity {
 		protected void onPostExecute(String result) {
 			text.setText(result);
 			dialog.dismiss();
+			Toast toast = Toast.makeText(context, "Data reloaded", Toast.LENGTH_SHORT);
+			toast.show();
 		}
 	}
 

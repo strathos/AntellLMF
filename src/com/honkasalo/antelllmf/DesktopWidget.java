@@ -69,7 +69,7 @@ public class DesktopWidget extends AppWidgetProvider {
 			StringBuilder sb = new StringBuilder();
 			StringBuilder sb2 = new StringBuilder();
 			StringBuilder sb3 = new StringBuilder();
-			Pattern p = Pattern.compile("(?<!^|/)(M|VL|L|G)");
+			Pattern p = Pattern.compile("(?<!^|/|/ )(M|VL|L|G)");
 			Matcher m = null;
 			
 			// Localize and make start from zero DAY_OF_WEEK
@@ -119,10 +119,10 @@ public class DesktopWidget extends AppWidgetProvider {
 						while (m.find()) {
 							sb2.append(m.group());
 						}
-						if (language.equals("Finnish")) {
+						if (language.equals("Finnish") || !(tds.text().matches("(.*)/(.*)"))) {
 							sb.append(tds.text().split("/| \\(")[0] + " " + sb2.toString() + "\n");
 						} else {
-							sb.append(tds.text().split("/| \\(")[1] + " " + sb2.toString() + "\n");
+							sb.append(tds.text().split("/| \\(")[1].replaceAll("^\\s","") + " " + sb2.toString() + "\n");
 						};
 					}
 
@@ -138,11 +138,11 @@ public class DesktopWidget extends AppWidgetProvider {
 						sb3.append(m.group());
 					}
 					if ( language.equals("Finnish")) {
-						sb.append(table.text().split("Week|/|: ")[2].replaceAll("(?<!^|/)(M|VL|L|G).+(M|VL|L|G)", "") + sb2.toString() + "\n");
-						sb.append(table.text().split("Week|/|: ")[5].replaceAll("(?<!^|/)(M|VL|L|G).+(M|VL|L|G)", "") + sb3.toString());
+						sb.append(table.text().split("Week|/|: ")[2].replaceAll("(?<!^|/|/ )(M|VL|L|G).+(M|VL|L|G)", "") + sb2.toString() + "\n");
+						sb.append(table.text().split("Week|/|: ")[5].replaceAll("(?<!^|/|/ )(M|VL|L|G).+(M|VL|L|G)", "") + sb3.toString());
 					} else {
-						sb.append(table.text().split("Week|/|: ")[3] + sb2.toString() + "\n");
-						sb.append(table.text().split("Week|/|: ")[6] + " " + sb3.toString());
+						sb.append(table.text().split("Week|/|: ")[3].replaceAll("^\\s","") + sb2.toString() + "\n");
+						sb.append(table.text().split("Week|/|: ")[6].replaceAll("^\\s","") + " " + sb3.toString());
 					};
 				} else {
 					sb.append("Weekend, no menu available.");
