@@ -24,6 +24,7 @@ public class AntellLMF extends Activity {
 	public static Context context;
 	private TextView text;
 	
+	
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,6 +45,15 @@ public class AntellLMF extends Activity {
     };
 
     @Override
+	protected void onRestart() {
+		super.onRestart();
+		DownloadMenuTask task = new DownloadMenuTask();
+        task.execute();
+    }
+
+
+
+	@Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.activity_antell_lmf, menu);
         return true;
