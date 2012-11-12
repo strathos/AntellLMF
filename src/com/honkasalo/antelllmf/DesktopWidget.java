@@ -129,11 +129,11 @@ public class DesktopWidget extends AppWidgetProvider {
 					// Weekly specials
 					table = doc.select("div:containsOwn(Week)").first();
 					sb2 = new StringBuilder();
-					m = p.matcher(table.text().split("Week Wok")[0]);
+					m = p.matcher(table.text().split("Week.+Wok")[0]);
 					while (m.find()) {
 						sb2.append(m.group());
 					}
-					m = p.matcher(table.text().split("Week Wok")[1]);
+					m = p.matcher(table.text().split("Week.+Wok")[1]);
 					while (m.find()) {
 						sb3.append(m.group());
 					}

@@ -168,11 +168,11 @@ public class AntellLMF extends Activity {
 		StringBuilder sb2 = new StringBuilder();
 		StringBuilder sb3 = new StringBuilder();
 		Pattern p = Pattern.compile("(?<!^|/)(M|VL|L|G)");
-		Matcher m = p.matcher(table.text().split("Week Wok")[0]);
+		Matcher m = p.matcher(table.text().split("Week.+Wok")[0]);
 		while (m.find()) {
 			sb2.append(m.group());
 		}
-		m = p.matcher(table.text().split("Week Wok")[1]);
+		m = p.matcher(table.text().split("Week.+Wok")[1]);
 		while (m.find()) {
 			sb3.append(m.group());
 		}
