@@ -3,8 +3,8 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_gravity="center_horizontal"
-    android:padding="2dp" >
-
+    android:padding="15dp" >
+
     <LinearLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
@@ -28,7 +28,7 @@
                 android:layout_height="wrap_content"
                 android:src="@drawable/ic_launcher"
                 tools:ignore="ContentDescription" />
-
+
             <TextView
                 android:id="@+id/widgetTitle"
                 android:layout_width="184dp"
@@ -38,7 +38,7 @@
                 android:textSize="17dp" >
 
             </TextView>
-
+
             <Button
                 android:id="@+id/refreshWidget"
                 android:layout_width="match_parent"
@@ -47,13 +47,15 @@
                 android:textSize="7dp" />
 
         </LinearLayout>
-
+
         <TextView
             android:id="@+id/widgetText"
             android:layout_width="match_parent"
             android:layout_height="160dp"
+            android:background="@drawable/plate"
             android:ems="10"
-            android:padding="2dp"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
             android:textSize="10dp" >
 
         </TextView>

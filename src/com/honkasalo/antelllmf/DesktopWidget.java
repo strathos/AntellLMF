@@ -35,7 +35,7 @@ public class DesktopWidget extends AppWidgetProvider {
 		intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetIds[0]);
 		intent.setAction("update");
 		
-		// Create new PendingIntent for refresh button
+		// Create new PendingIntent for reload button
 		PendingIntent pi = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 		v.setOnClickPendingIntent(R.id.refreshWidget, pi);
 		
@@ -47,6 +47,7 @@ public class DesktopWidget extends AppWidgetProvider {
 		
 	}
 	
+	// Functionality for reload button
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		super.onReceive(context, intent);
@@ -55,12 +56,13 @@ public class DesktopWidget extends AppWidgetProvider {
 			new DownloadMenuTask().execute(context);
 		}
 	}
-
+	
+	// Background task for updating the widget
 	private class DownloadMenuTask extends AsyncTask<Context, Void,String> {
 		private Context context;
 		private RemoteViews v;
-		
-	    @Override
+				
+		@Override
 	    protected String doInBackground(Context... params) {
 	    	context = params[0];
 	    	Calendar cal = Calendar.getInstance();
@@ -69,8 +71,16 @@ public class DesktopWidget extends AppWidgetProvider {
 			StringBuilder sb = new StringBuilder();
 			StringBuilder sb2 = new StringBuilder();
 			StringBuilder sb3 = new StringBuilder();
+			
+			// RegExp pattern to match food properties
 			Pattern p = Pattern.compile("(?<!^|/|/ )(M|VL|L|G)");
 			Matcher m = null;
+			
+			// Inform user about reloading
+			AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+			v = new RemoteViews(context.getPackageName(), R.layout.widget_antell_lmf);
+			v.setTextViewText(R.id.widgetText, "Reloading data...");
+			appWidgetManager.updateAppWidget(new ComponentName(context, DesktopWidget.class), v);
 			
 			// Localize and make start from zero DAY_OF_WEEK
 			cal.setTime(new Date());
@@ -81,17 +91,13 @@ public class DesktopWidget extends AppWidgetProvider {
 			day--;
 			Log.d("WIDGET", "Day of Week: "+Integer.toString(day));
 			
-			// For testing purposes, making it work on Sunday
-			//day = 1;
-			
+			// Set the url from where to get the actual url end for the html url (iframe)
            	String url = AntellLMF.getFrameUrl("http://www.antell.fi/docs/lunch.php?LM%20Ericsson,%20Helsinki");
-           	//Log.d("WIDGET", url);
 			
+           	// Use Jsoup to connect to the fixed url and make a Jsoup document from the html page
 			try {
 				SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
 				String language = settings.getString("foodMenuLanguage","");
-    		
-				//Log.d("WIDGET", url);
 				
 				boolean connection_established=false;
 				for (int tries = 1; tries<5 && !connection_established; tries++) {
@@ -114,11 +120,15 @@ public class DesktopWidget extends AppWidgetProvider {
 
 					for (Element row : table.select("tr")) {
 						Element tds = row.select("td").first();
+						
+						// Use the RegExp pattern to find properties
 						m = p.matcher(tds.text());
 						sb2 = new StringBuilder();
 						while (m.find()) {
 							sb2.append(m.group());
 						}
+						
+						// Print correct language, or the first one if no slash is found
 						if (language.equals("Finnish") || !(tds.text().matches("(.*)/(.*)"))) {
 							sb.append(tds.text().split("/| \\(")[0] + " " + sb2.toString() + "\n");
 						} else {
@@ -129,6 +139,8 @@ public class DesktopWidget extends AppWidgetProvider {
 					// Weekly specials
 					table = doc.select("div:containsOwn(Week)").first();
 					sb2 = new StringBuilder();
+					
+					// Split from "Week Wok" to a la carte and wok
 					m = p.matcher(table.text().split("Week.+Wok")[0]);
 					while (m.find()) {
 						sb2.append(m.group());
@@ -155,12 +167,12 @@ public class DesktopWidget extends AppWidgetProvider {
 			
            	return sb.toString();
 	    }
-
+		
 		@Override
 		protected void onPostExecute(String result) {
+			// Print built food menu to widget
 			AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
 			v = new RemoteViews(context.getPackageName(), R.layout.widget_antell_lmf);
-			//v.setTextViewText(R.id.widgetTitle, "testiotsikko");
 			v.setTextViewText(R.id.widgetText, result);
 			appWidgetManager.updateAppWidget(new ComponentName(context, DesktopWidget.class), v);
 		}
