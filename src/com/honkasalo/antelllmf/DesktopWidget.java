@@ -39,6 +39,11 @@ public class DesktopWidget extends AppWidgetProvider {
 		PendingIntent pi = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 		v.setOnClickPendingIntent(R.id.refreshWidget, pi);
 		
+		// Create new PendingIntent to open main activity by clicking the widget
+		Intent mainAppIntent = new Intent(context, AntellLMF.class);
+		PendingIntent mainApp = PendingIntent.getActivity(context, 0, mainAppIntent, 0);
+		v.setOnClickPendingIntent(R.id.widgetText, mainApp);
+		
 		// Manually run the asynchTask
 		new DownloadMenuTask().execute(context);
 		

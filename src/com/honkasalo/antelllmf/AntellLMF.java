@@ -30,21 +30,27 @@ public class AntellLMF extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
+        // Make a variable for context for easier reuse
         context = this;
         
+        // Set main activity layout
         setContentView(R.layout.activity_antell_lmf);
         setTitle("AntellLMF Weekly Menu");
         
+        // Read language setting from preferences
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
         Log.d("PREF:LANG",settings.getString("foodMenuLanguage","No Language set"));
-
+        
+        // Define TextView for food menu output
         text = (TextView) findViewById(R.id.foodMenu);
 
         // Fetch menu on background
         DownloadMenuTask task = new DownloadMenuTask();
         task.execute();
     };
-
+    
+    
+    /* Reloads menu when navigated back to */
     @Override
 	protected void onRestart() {
 		super.onRestart();
@@ -53,13 +59,15 @@ public class AntellLMF extends Activity {
     }
 
 
-
+    /* Defines and opens menu */
 	@Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.activity_antell_lmf, menu);
         return true;
     }
     
+	
+	/* Listener for menu item clicks */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
     	switch(item.getItemId()) {
