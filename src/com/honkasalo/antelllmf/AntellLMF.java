@@ -132,17 +132,17 @@ public class AntellLMF extends Activity {
             // Select a table according to week day number
     		menu.setWeekTitle(getMenuTitle(doc.select("div:containsOwn(Lounaslista)").first()));
     		if (language.equals("Finnish")) {
-    			menu.setMonday("Maanantai\n\n"+getDailyMenu(doc.select("table.lunchTable2").get(0)));
-    			menu.setTuesday("Tiistai\n\n"+getDailyMenu(doc.select("table.lunchTable2").get(1)));
-    			menu.setWednesday("Keskiviikko\n\n"+getDailyMenu(doc.select("table.lunchTable2").get(2)));
-    			menu.setThursday("Torstai\n\n"+getDailyMenu(doc.select("table.lunchTable2").get(3)));
-    			menu.setFriday("Perjantai\n\n"+getDailyMenu(doc.select("table.lunchTable2").get(4)));
+    			menu.setMonday("Maanantai\n"+getDailyMenu(doc.select("table.lunchTable").get(1)).replaceAll("MAANANTAI",""));
+    			menu.setTuesday("Tiistai\n"+getDailyMenu(doc.select("table.lunchTable").get(2)).replaceAll("TIISTAI",""));
+    			menu.setWednesday("Keskiviikko\n"+getDailyMenu(doc.select("table.lunchTable").get(3)).replaceAll("KESKIVIIKKO",""));
+    			menu.setThursday("Torstai\n"+getDailyMenu(doc.select("table.lunchTable").get(4)).replaceAll("TORSTAI",""));
+    			menu.setFriday("Perjantai\n"+getDailyMenu(doc.select("table.lunchTable").get(5)).replaceAll("PERJANTAI",""));
     		} else {
-    			menu.setMonday("Monday\n\n"+getDailyMenu(doc.select("table.lunchTable2").get(0)));
-    			menu.setTuesday("Tuesday\n\n"+getDailyMenu(doc.select("table.lunchTable2").get(1)));
-    			menu.setWednesday("Wednesday\n\n"+getDailyMenu(doc.select("table.lunchTable2").get(2)));
-    			menu.setThursday("Thursday\n\n"+getDailyMenu(doc.select("table.lunchTable2").get(3)));
-    			menu.setFriday("Friday\n\n"+getDailyMenu(doc.select("table.lunchTable2").get(4)));
+    			menu.setMonday("Monday\n"+getDailyMenu(doc.select("table.lunchTable").get(1)).replaceAll("MAANANTAI",""));
+    			menu.setTuesday("Tuesday\n"+getDailyMenu(doc.select("table.lunchTable").get(2)).replaceAll("TIISTAI",""));
+    			menu.setWednesday("Wednesday\n"+getDailyMenu(doc.select("table.lunchTable").get(3)).replaceAll("KESKIVIIKKO",""));
+    			menu.setThursday("Thursday\n"+getDailyMenu(doc.select("table.lunchTable").get(4)).replaceAll("TORSTAI",""));
+    			menu.setFriday("Friday\n"+getDailyMenu(doc.select("table.lunchTable").get(5)).replaceAll("PERJANTAI",""));
     		};
             menu.setWeeksSpecials(getWeeklySpecial(doc.select("div:containsOwn(Week)").first()));
         } catch (Exception ex) {

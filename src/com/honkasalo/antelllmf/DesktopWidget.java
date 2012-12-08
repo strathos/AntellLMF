@@ -87,13 +87,12 @@ public class DesktopWidget extends AppWidgetProvider {
 			v.setTextViewText(R.id.widgetText, "Reloading data...");
 			appWidgetManager.updateAppWidget(new ComponentName(context, DesktopWidget.class), v);
 			
-			// Localize and make start from zero DAY_OF_WEEK
+			// Localize DAY_OF_WEEK
 			cal.setTime(new Date());
 			int day = cal.get(Calendar.DAY_OF_WEEK) - 1;
 			if (day == 0) {
 				day = day + 6;
 			}
-			day--;
 			Log.d("WIDGET", "Day of Week: "+Integer.toString(day));
 			
 			// Set the url from where to get the actual url end for the html url (iframe)
@@ -117,11 +116,11 @@ public class DesktopWidget extends AppWidgetProvider {
 				
 				// Title
 				table = doc.select("div:containsOwn(Lounaslista)").first();
-				sb.append(table.text().split("Lounaslista ")[1]+"\n");
-								
-				if (day < 5) {
+				sb.append(table.text().split("Lounaslista ")[1]);
+				
+				if (day < 6) {
 					// Daily menu
-					table = doc.select("table.lunchTable2").get(day);
+					table = doc.select("table.lunchTable").get(day);
 
 					for (Element row : table.select("tr")) {
 						Element tds = row.select("td").first();
@@ -135,9 +134,9 @@ public class DesktopWidget extends AppWidgetProvider {
 						
 						// Print correct language, or the first one if no slash is found
 						if (language.equals("Finnish") || !(tds.text().matches("(.*)/(.*)"))) {
-							sb.append(tds.text().split("/| \\(")[0] + " " + sb2.toString() + "\n");
+							sb.append(tds.text().split("/| \\(")[0].replaceAll("MAANANTAI|TIISTAI|KESKIVIIKKO|TORSTAI|PERJANTAI","") + " " + sb2.toString() + "\n");
 						} else {
-							sb.append(tds.text().split("/| \\(")[1].replaceAll("^\\s","") + " " + sb2.toString() + "\n");
+							sb.append(tds.text().split("/| \\(")[1].replaceAll("^\\s","").replaceAll("MAANANTAI|TIISTAI|KESKIVIIKKO|TORSTAI|PERJANTAI","") + " " + sb2.toString() + "\n");
 						};
 					}
 
@@ -154,15 +153,21 @@ public class DesktopWidget extends AppWidgetProvider {
 					while (m.find()) {
 						sb3.append(m.group());
 					}
-					if ( language.equals("Finnish")) {
-						sb.append(table.text().split("Week|/|: ")[2].replaceAll("(?<!^|/|/ )(M|VL|L|G).+(M|VL|L|G)", "") + sb2.toString() + "\n");
-						sb.append(table.text().split("Week|/|: ")[5].replaceAll("(?<!^|/|/ )(M|VL|L|G).+(M|VL|L|G)", "") + sb3.toString());
+					
+					// Check if daily menu was loaded (for example days when restaurant is closed)
+					if (sb.toString().length() > 50) {
+						if ( language.equals("Finnish")) {
+							sb.append(table.text().split("Week|/|: ")[2].replaceAll("(?<!^|/|/ )(M|VL|L|G).+(M|VL|L|G)", "") + sb2.toString() + "\n");
+							sb.append(table.text().split("Week|/|: ")[5].replaceAll("(?<!^|/|/ )(M|VL|L|G).+(M|VL|L|G)", "") + sb3.toString());
+						} else {
+							sb.append(table.text().split("Week|/|: ")[3].replaceAll("^\\s","") + sb2.toString() + "\n");
+							sb.append(table.text().split("Week|/|: ")[6].replaceAll("^\\s","") + " " + sb3.toString());
+						};
 					} else {
-						sb.append(table.text().split("Week|/|: ")[3].replaceAll("^\\s","") + sb2.toString() + "\n");
-						sb.append(table.text().split("Week|/|: ")[6].replaceAll("^\\s","") + " " + sb3.toString());
-					};
+						sb.append("No menu available for today.");
+					}
 				} else {
-					sb.append("Weekend, no menu available.");
+					sb.append("\n\nWeekend, no menu available.");
 				}
 			
 			} catch (Exception ex) {
