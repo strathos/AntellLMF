@@ -78,7 +78,7 @@ public class DesktopWidget extends AppWidgetProvider {
 			StringBuilder sb3 = new StringBuilder();
 			
 			// RegExp pattern to match food properties
-			Pattern p = Pattern.compile("(?<!^|/|/ )(M|VL|L|G)");
+			Pattern p = Pattern.compile("(?<!^|/|/ )(M|VL|L|G)(?=,|\\)| )");
 			Matcher m = null;
 			
 			// Inform user about reloading
@@ -93,7 +93,10 @@ public class DesktopWidget extends AppWidgetProvider {
 			if (day == 0) {
 				day = day + 6;
 			}
-			Log.d("WIDGET", "Day of Week: "+Integer.toString(day));
+			
+			// Override integer day for debugging
+			//day = 2;
+			//Log.d("WIDGET", "Day of Week: "+Integer.toString(day));
 			
 			// Set the url from where to get the actual url end for the html url (iframe)
            	String url = AntellLMF.getFrameUrl("http://www.antell.fi/docs/lunch.php?LM%20Ericsson,%20Helsinki");
@@ -133,10 +136,10 @@ public class DesktopWidget extends AppWidgetProvider {
 						}
 						
 						// Print correct language, or the first one if no slash is found
-						if (language.equals("Finnish") || !(tds.text().matches("(.*)/(.*)"))) {
-							sb.append(tds.text().split("/| \\(")[0].replaceAll("MAANANTAI|TIISTAI|KESKIVIIKKO|TORSTAI|PERJANTAI","") + " " + sb2.toString() + "\n");
+						if (language.equals("Finnish") || !(tds.text().matches("(.*)(/|(,\\s?[A-Z]))(.*)"))) {
+							sb.append(tds.text().split("/|,\\s?(?=[A-Z])| \\(")[0].replaceAll("MAANANTAI|TIISTAI|KESKIVIIKKO|TORSTAI|PERJANTAI","") + " " + sb2.toString() + "\n");
 						} else {
-							sb.append(tds.text().split("/| \\(")[1].replaceAll("^\\s","").replaceAll("MAANANTAI|TIISTAI|KESKIVIIKKO|TORSTAI|PERJANTAI","") + " " + sb2.toString() + "\n");
+							sb.append(tds.text().split("/|,\\s?(?=[A-Z])| \\(")[1].replaceAll("^\\s","").replaceAll("MAANANTAI|TIISTAI|KESKIVIIKKO|TORSTAI|PERJANTAI","") + " " + sb2.toString() + "\n");
 						};
 					}
 
@@ -144,21 +147,23 @@ public class DesktopWidget extends AppWidgetProvider {
 					table = doc.select("div:containsOwn(Week)").first();
 					sb2 = new StringBuilder();
 					
-					// Split from "Week Wok" to a la carte and wok
-					m = p.matcher(table.text().split("Week.+Wok")[0]);
-					while (m.find()) {
-						sb2.append(m.group());
-					}
-					m = p.matcher(table.text().split("Week.+Wok")[1]);
-					while (m.find()) {
-						sb3.append(m.group());
+					// Split from "Week Wok" to a la carte and wok to get properties for specials, but only if they exist
+					if (table.text().matches("M|VL|L|G")) {
+						m = p.matcher(table.text().split("Week.+Wok")[0]);
+						while (m.find()) {
+							sb2.append(m.group());
+						}
+						m = p.matcher(table.text().split("Week.+Wok")[1]);
+						while (m.find()) {
+							sb3.append(m.group());
+						}
 					}
 					
 					// Check if daily menu was loaded (for example days when restaurant is closed)
 					if (sb.toString().length() > 50) {
 						if ( language.equals("Finnish")) {
-							sb.append(table.text().split("Week|/|: ")[2].replaceAll("(?<!^|/|/ )(M|VL|L|G).+(M|VL|L|G)", "") + sb2.toString() + "\n");
-							sb.append(table.text().split("Week|/|: ")[5].replaceAll("(?<!^|/|/ )(M|VL|L|G).+(M|VL|L|G)", "") + sb3.toString());
+							sb.append(table.text().replaceAll("(?<!^|/|/ )(M|VL|L|G).+(M|VL|L|G)", "").split("Week|/|: ")[2] + sb2.toString() + "\n");
+							sb.append(table.text().replaceAll("(?<!^|/|/ )(M|VL|L|G).+(M|VL|L|G)", "").split("Week|/|: ")[5] + sb3.toString());
 						} else {
 							sb.append(table.text().split("Week|/|: ")[3].replaceAll("^\\s","") + sb2.toString() + "\n");
 							sb.append(table.text().split("Week|/|: ")[6].replaceAll("^\\s","") + " " + sb3.toString());
