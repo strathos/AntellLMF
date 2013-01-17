@@ -2,9 +2,6 @@ package com.honkasalo.antelllmf;
 
 import java.util.Calendar;
 import java.util.Date;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -74,18 +71,16 @@ public class DesktopWidget extends AppWidgetProvider {
 			Document doc = null;
 			Element table = null;
 			StringBuilder sb = new StringBuilder();
-			StringBuilder sb2 = new StringBuilder();
-			StringBuilder sb3 = new StringBuilder();
-			
-			// RegExp pattern to match food properties
-			Pattern p = Pattern.compile("(?<!^|/|/ )(M|VL|L|G)(?=,|\\)| )");
-			Matcher m = null;
 			
 			// Inform user about reloading
 			AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
 			v = new RemoteViews(context.getPackageName(), R.layout.widget_antell_lmf);
 			v.setTextViewText(R.id.widgetText, "Reloading data...");
 			appWidgetManager.updateAppWidget(new ComponentName(context, DesktopWidget.class), v);
+			
+			// Language setting
+			SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
+			String language = settings.getString("foodMenuLanguage","");
 			
 			// Localize DAY_OF_WEEK
 			cal.setTime(new Date());
@@ -95,21 +90,58 @@ public class DesktopWidget extends AppWidgetProvider {
 			}
 			
 			// Override integer day for debugging
-			//day = 2;
+			//day = 6;
 			//Log.d("WIDGET", "Day of Week: "+Integer.toString(day));
 			
-			// Set the url from where to get the actual url end for the html url (iframe)
-           	String url = AntellLMF.getFrameUrl("http://www.antell.fi/docs/lunch.php?LM%20Ericsson,%20Helsinki");
-			
-           	// Use Jsoup to connect to the fixed url and make a Jsoup document from the html page
+			// Select tables based on language set
+			String dayTable = "";
+			String speTable = "";
+			if (language.equals("Finnish")) {
+				switch(day) {
+				case 1:
+					dayTable = "monFi";
+					break;
+				case 2:
+					dayTable = "tueFi";
+					break;
+				case 3:
+					dayTable = "wedFi";
+					break;
+				case 4:
+					dayTable = "thuFi";
+					break;
+				case 5:
+					dayTable = "friFi";
+					break;
+				}
+				speTable = "speFi";
+			} else {
+				switch(day) {
+				case 1:
+					dayTable = "monEn";
+					break;
+				case 2:
+					dayTable = "tueEn";
+					break;
+				case 3:
+					dayTable = "wedEn";
+					break;
+				case 4:
+					dayTable = "thuEn";
+					break;
+				case 5:
+					dayTable = "friEn";
+					break;
+				}
+				speTable = "speEn";
+			}
+						
+           	// Use Jsoup to connect to the url and make a Jsoup document from the html page
 			try {
-				SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
-				String language = settings.getString("foodMenuLanguage","");
-				
 				boolean connection_established=false;
 				for (int tries = 1; tries<5 && !connection_established; tries++) {
 					try {
-						doc = Jsoup.connect("http://www.antell.fi"+url).timeout(100*1000).get();
+						doc = Jsoup.connect("http://unska.com/kari/antell_lmf_menu.php").timeout(100*1000).get();
 						Log.d("CONNECTION", "Connected and fetched page.");
 						connection_established=true;
 					} catch (Exception ex) {
@@ -118,68 +150,37 @@ public class DesktopWidget extends AppWidgetProvider {
         	    }
 				
 				// Title
-				table = doc.select("div:containsOwn(Lounaslista)").first();
+				table = doc.select("table.title").first();
 				sb.append(table.text().split("Lounaslista ")[1]);
 				
 				if (day < 6) {
 					// Daily menu
-					table = doc.select("table.lunchTable").get(day);
+					table = doc.select("table."+dayTable).first();
 
 					for (Element row : table.select("tr")) {
 						Element tds = row.select("td").first();
-						
-						// Use the RegExp pattern to find properties
-						m = p.matcher(tds.text());
-						sb2 = new StringBuilder();
-						while (m.find()) {
-							sb2.append(m.group());
-						}
-						
-						// Print correct language, or the first one if no slash is found
-						if (language.equals("Finnish") || !(tds.text().matches("(.*)(/|(,\\s?[A-Z]))(.*)"))) {
-							sb.append(tds.text().split("/|,\\s?(?=[A-Z])| \\(")[0].replaceAll("MAANANTAI|TIISTAI|KESKIVIIKKO|TORSTAI|PERJANTAI","") + " " + sb2.toString() + "\n");
-						} else {
-							sb.append(tds.text().split("/|,\\s?(?=[A-Z])| \\(")[1].replaceAll("^\\s","").replaceAll("MAANANTAI|TIISTAI|KESKIVIIKKO|TORSTAI|PERJANTAI","") + " " + sb2.toString() + "\n");
-						};
+						sb.append(tds.text().replaceAll("Maanantai|Tiistai|Keskiviikko|Torstai|Perjantai|Monday|Tuesday|Wednesday|Thursday|Friday","") + "\n");
 					}
 
 					// Weekly specials
-					table = doc.select("div:containsOwn(Week)").first();
-					sb2 = new StringBuilder();
-					
-					// Split from "Week Wok" to a la carte and wok to get properties for specials, but only if they exist
-					if (table.text().matches("M|VL|L|G")) {
-						m = p.matcher(table.text().split("Week.+Wok")[0]);
-						while (m.find()) {
-							sb2.append(m.group());
-						}
-						m = p.matcher(table.text().split("Week.+Wok")[1]);
-						while (m.find()) {
-							sb3.append(m.group());
-						}
-					}
-					
-					// Check if daily menu was loaded (for example days when restaurant is closed)
+					table = doc.select("table."+speTable).first();
 					if (sb.toString().length() > 50) {
-						if ( language.equals("Finnish")) {
-							sb.append(table.text().replaceAll("(?<!^|/|/ )(M|VL|L|G).+(M|VL|L|G)", "").split("Week|/|: ")[2] + sb2.toString() + "\n");
-							sb.append(table.text().replaceAll("(?<!^|/|/ )(M|VL|L|G).+(M|VL|L|G)", "").split("Week|/|: ")[5] + sb3.toString());
-						} else {
-							sb.append(table.text().split("Week|/|: ")[3].replaceAll("^\\s","") + sb2.toString() + "\n");
-							sb.append(table.text().split("Week|/|: ")[6].replaceAll("^\\s","") + " " + sb3.toString());
-						};
+						for (Element row : table.select("tr")) {
+							Element tds = row.select("td").first();
+							if ((tds.text().contains("Viikon erikoiset")) || (tds.text().contains("Weekly Specials"))) {
+								continue;
+							}
+							sb.append(tds.text() + "\n");
+						}
 					} else {
 						sb.append("No menu available for today.");
 					}
 				} else {
 					sb.append("\n\nWeekend, no menu available.");
 				}
-			
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
-			
-			
            	return sb.toString();
 	    }
 		

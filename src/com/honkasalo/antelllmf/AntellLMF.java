@@ -1,8 +1,5 @@
 package com.honkasalo.antelllmf;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -88,25 +85,6 @@ public class AntellLMF extends Activity {
     	return super.onOptionsItemSelected(item);
     }
     
-    /* Extract iFrame url from main web page */
-    public static String getFrameUrl(String url) {
-
-        String frameUrl = "";
-        try {
-            Document doc = Jsoup.connect(url).timeout(10*1000).get();
-
-            Element frame = doc.select("frame").first();
-            String framesrc = frame.attr("src");
-
-            // Remove possible leading dots from extracted url
-            frameUrl = framesrc.replaceAll("\\.{2}", "");
-            
-        } catch (Exception error) {
-            error.printStackTrace();
-        }
-        return frameUrl;
-    }
-    
     /* Get days menu and return as a string*/
     public FoodMenu getDaysMenu(String url) {
         FoodMenu menu = new FoodMenu();
@@ -130,21 +108,22 @@ public class AntellLMF extends Activity {
     		String language = settings.getString("foodMenuLanguage","");
 
             // Select a table according to week day number
-    		menu.setWeekTitle(getMenuTitle(doc.select("div:containsOwn(Lounaslista)").first()));
+    		menu.setWeekTitle(getMenuTitle(doc.select("table.title").first()));
     		if (language.equals("Finnish")) {
-    			menu.setMonday("Maanantai\n"+getDailyMenu(doc.select("table.lunchTable").get(1)).replaceAll("MAANANTAI",""));
-    			menu.setTuesday("Tiistai\n"+getDailyMenu(doc.select("table.lunchTable").get(2)).replaceAll("TIISTAI",""));
-    			menu.setWednesday("Keskiviikko\n"+getDailyMenu(doc.select("table.lunchTable").get(3)).replaceAll("KESKIVIIKKO",""));
-    			menu.setThursday("Torstai\n"+getDailyMenu(doc.select("table.lunchTable").get(4)).replaceAll("TORSTAI",""));
-    			menu.setFriday("Perjantai\n"+getDailyMenu(doc.select("table.lunchTable").get(5)).replaceAll("PERJANTAI",""));
+    			menu.setMonday("Maanantai\n"+getDailyMenu(doc.select("table.monFi").first()).replaceAll("Maanantai",""));
+    			menu.setTuesday("Tiistai\n"+getDailyMenu(doc.select("table.tueFi").first()).replaceAll("Tiistai",""));
+    			menu.setWednesday("Keskiviikko\n"+getDailyMenu(doc.select("table.wedFi").first()).replaceAll("Keskiviikko",""));
+    			menu.setThursday("Torstai\n"+getDailyMenu(doc.select("table.thuFi").first()).replaceAll("Torstai",""));
+    			menu.setFriday("Perjantai\n"+getDailyMenu(doc.select("table.friFi").first()).replaceAll("Perjantai",""));
+    			menu.setWeeksSpecials("\nViikon erikoiset\n"+getWeeklySpecial(doc.select("table.speFi").first()).replaceAll("Viikon erikoiset",""));
     		} else {
-    			menu.setMonday("Monday\n"+getDailyMenu(doc.select("table.lunchTable").get(1)).replaceAll("MAANANTAI",""));
-    			menu.setTuesday("Tuesday\n"+getDailyMenu(doc.select("table.lunchTable").get(2)).replaceAll("TIISTAI",""));
-    			menu.setWednesday("Wednesday\n"+getDailyMenu(doc.select("table.lunchTable").get(3)).replaceAll("KESKIVIIKKO",""));
-    			menu.setThursday("Thursday\n"+getDailyMenu(doc.select("table.lunchTable").get(4)).replaceAll("TORSTAI",""));
-    			menu.setFriday("Friday\n"+getDailyMenu(doc.select("table.lunchTable").get(5)).replaceAll("PERJANTAI",""));
+    			menu.setMonday("Monday\n"+getDailyMenu(doc.select("table.monEn").first()).replaceAll("Monday",""));
+    			menu.setTuesday("Tuesday\n"+getDailyMenu(doc.select("table.tueEn").first()).replaceAll("Tuesday",""));
+    			menu.setWednesday("Wednesday\n"+getDailyMenu(doc.select("table.wedEn").first()).replaceAll("Wednesday",""));
+    			menu.setThursday("Thursday\n"+getDailyMenu(doc.select("table.thuEn").first()).replaceAll("Thursday",""));
+    			menu.setFriday("Friday\n"+getDailyMenu(doc.select("table.friEn").first()).replaceAll("Friday",""));
+    			menu.setWeeksSpecials("\nWeekly Specials\n"+getWeeklySpecial(doc.select("table.speEn").first()).replaceAll("Weekly Specials",""));
     		};
-            menu.setWeeksSpecials(getWeeklySpecial(doc.select("div:containsOwn(Week)").first()));
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -159,53 +138,21 @@ public class AntellLMF extends Activity {
     }
 
 	public static String getDailyMenu(Element table) {
-		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(AntellLMF.context);
-		String language = settings.getString("foodMenuLanguage","");
 		StringBuilder sb = new StringBuilder();
-		Pattern p = Pattern.compile("(?<!^|/|/ )(M|VL|L|G)(?=,|\\)| )");
 		for (Element row : table.select("tr")) {
 	        Element tds = row.select("td").first();
-	        Matcher m = p.matcher(tds.text());
-	        StringBuilder sb2 = new StringBuilder();
-			while (m.find()) {
-				sb2.append(m.group());
-			}
-			if (language.equals("Finnish") || !(tds.text().matches("(.*)(/|(,\\s?[A-Z]))(.*)"))) {
-	        	sb.append(tds.text().split("/|,\\s?(?=[A-Z])| \\(")[0] + " " + sb2.toString() + "\n");
-	        } else {
-	        	sb.append(tds.text().split("/|,\\s?(?=[A-Z])| \\(")[1].replaceAll("^\\s","") + " " + sb2.toString() + "\n");
-	        };
+	        sb.append(tds.text() + "\n");
 	        //Log.d("DATA","Menu: "+tds.text());
 	    }
 	    return sb.toString();
 	}
 	
 	public static String getWeeklySpecial(Element table) {
-		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(AntellLMF.context);
-		String language = settings.getString("foodMenuLanguage","");
 		StringBuilder sb = new StringBuilder();
-		StringBuilder sb2 = new StringBuilder();
-		StringBuilder sb3 = new StringBuilder();
-		if (table.text().matches("M|VL|L|G")) {
-			Pattern p = Pattern.compile("(?<!^|/)(M|VL|L|G)");
-			Matcher m = p.matcher(table.text().split("Week.+Wok")[0]);
-			while (m.find()) {
-				sb2.append(m.group());
-			}
-			m = p.matcher(table.text().split("Week.+Wok")[1]);
-			while (m.find()) {
-				sb3.append(m.group());
-			}
-		}
-		if ( language.equals("Finnish")) {
-			sb.append("Viikon erikoiset\n\n");
-			sb.append(table.text().replaceAll("(?<!^|/|/ )(M|VL|L|G).+(M|VL|L|G)", "").split("Week|/|: ")[2] + sb2.toString() + "\n");
-			sb.append(table.text().replaceAll("(?<!^|/|/ )(M|VL|L|G).+(M|VL|L|G)", "").split("Week|/|: ")[5] + sb3.toString());
-		} else {
-			sb.append("Specials of the week\n\n");
-			sb.append(table.text().split("Week|/|: ")[3].replaceAll("^\\s","") + sb2.toString() + "\n");
-			sb.append(table.text().split("Week|/|: ")[6].replaceAll("^\\s","") + " " + sb3.toString());
-		};
+		for (Element row : table.select("tr")) {
+	        Element tds = row.select("td").first();
+	        sb.append(tds.text() + "\n");
+	    }
 		//Log.d("DATA","Special: "+table.text());
 	    return sb.toString();
 	}
@@ -222,10 +169,8 @@ public class AntellLMF extends Activity {
 		
 	    @Override
 	    protected String doInBackground(Void... params) {
-           	FoodMenu menu = new FoodMenu(); 
-           	String url = getFrameUrl("http://www.antell.fi/docs/lunch.php?LM%20Ericsson,%20Helsinki");
-           	//Log.d("URL", url);
-           	menu = getDaysMenu("http://www.antell.fi"+url);
+           	FoodMenu menu = new FoodMenu();
+           	menu = getDaysMenu("http://unska.com/kari/antell_lmf_menu.php");
            	return menu.toString();
 	    }
 
